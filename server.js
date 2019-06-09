@@ -19,7 +19,7 @@ const users = [
     }
 ]
 
-app.get('/', (req, res) => { res.send(users); });
+app.get('/users', (req, res) => { res.send(users); });
 
 app.post('/register', (req, res) => {
     let isFound = false;
