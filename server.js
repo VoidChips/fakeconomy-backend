@@ -19,23 +19,24 @@ const users = [
     }
 ]
 
-app.get('/users', (req, res) => { res.send(users); });
+app.get('/users', (req, res) => { 
+    res.send(users);
+});
 
 app.post('/register', (req, res) => {
     let isFound = false;
     for (user of users) {
-        if (user.email === req.body.email) {
+        if (user.email === req.body.email || user.username === req.body.username) {
             isFound = true;
         }
     }
-    if (isFound === true) {
-        res.status(400).send('user already exists');
+    if (!isFound) {
+        users.push(req.body);
+        res.send('register successful');
     }
     else {
-        users.push(req.body);
-        res.send(users);
+        res.status(400).send('user already exists');
     }
-    
 });
 
 app.listen(3000, () => {
