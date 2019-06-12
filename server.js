@@ -24,7 +24,7 @@ const users = [
     }
 ]
 
-app.get('/users', (req, res) => {
+app.get('/users', (req, res, next) => {
     let usernames = [];
     for (user of users) {
         usernames.push(user.username);
@@ -32,7 +32,7 @@ app.get('/users', (req, res) => {
     res.send(usernames);
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', (req, res, next) => {
     let isFound = false;
     for (user of users) {
         if (user.username === req.body.username && user.password === req.body.password) {
@@ -48,7 +48,7 @@ app.post('/login', (req, res) => {
     }
 });
 
-app.post('/register', (req, res) => {
+app.post('/register', (req, res, next) => {
     let isFound = false;
     const arr = Object.keys(req.body);
     if (arr[0] === 'email' && arr[1] === 'username' && arr[2] === 'password') {
