@@ -1,30 +1,11 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const pool = require('../database-config/fakeconomy-config');
 
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
-// app.use(function(req, res, next) {
-//     res.header("Access-Control-Allow-Origin", "*");
-//     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-//     next();
-//   });
-
-const users = [
-    {
-        email: 'void@gmail.com',
-        username: 'void',
-        password: '123',
-        balance: 1000
-    },
-    {
-        email: 'test@gmail.com',
-        username: 'test',
-        password: '1234',
-        balance: 100
-    }
-];
 
 const products = [
     {
@@ -50,11 +31,17 @@ const products = [
 ];
 
 app.get('/users', (req, res) => {
-    let usernames = [];
-    for (user of users) {
-        usernames.push(user.username);
-    }
-    res.send(usernames);
+    pool.query('select * from users order by id asc', (err, results) => {
+        if (err) {
+            throw err;
+        }
+        let usernames = [];
+        const users = results.rows;
+        for (user of users) {
+            usernames.push(user.username);
+        }
+        res.send(usernames);
+    })
 });
 
 app.get('/products', (req, res) => {
@@ -62,98 +49,76 @@ app.get('/products', (req, res) => {
 });
 
 // send user's balance
-app.post('/balance', (req, res) => {
-    const username = req.body.username;
-    let isFound = false;
-    let i = 0;
-    for (user of users) {
-        if (user.username === username) {
-            isFound = true;
-            break;
+app.get('/balance/:id', (req, res) => {
+    const id = req.params.id;
+    pool.query('select * from users where id = $1', [id], (err, results) => {
+        if (err) {
+            throw err;
         }
-        i++;
-    }
-    // if user was found
-    if (isFound) {
-        const balance = users[i].balance.toString();
+        const balance = results.rows[0].balance;
         res.send({ 'balance': balance });
-    }
-    else {
-        res.status(404).send('user not found');
-    }
+    })
 });
 
 // update user's balance
 app.post('/update_balance', (req, res) => {
-    const username = req.body.username;
-    let isFound = false;
-    let i = 0;
-    for (user of users) {
-        if (user.username === username) {
-            isFound = true;
-            break;
-        }
-        i++;
-    }
-    
-    if (isFound) {
-        let isUpdated = false;
-        const new_balance = Number(req.body.new_balance);
-        // find out if balance was updated
-        if (new_balance != users[i].balance) {
-            isUpdated = true;
-        }
-        if (isUpdated) {
-            users[i].balance = new_balance;
-            res.send('balance updated');
-        }
-        else {
-            res.send('balance unchanged');
-        }
-    }
-    else {
-        res.status(404).send('user not found');
-    }
-
+    const { id, price } = req.body;
+    pool.query('select * from users where id = $1', [id], (err, results) => {
+        if (err) { throw err; }
+        const balance = results.rows[0].balance;
+        const new_balance = balance - price;
+        pool.query('update users set balance = $1 where id = $2', [new_balance, id], (err, results) => {
+            if (err) { throw err; }
+            res.send({'result': 'balance updated'});
+        });
+    });
 });
 
 app.post('/login', (req, res) => {
-    let isFound = false;
-    for (user of users) {
-        if (user.username === req.body.username && user.password === req.body.password) {
-            isFound = true;
-            break; // stop loop after user found
+    const { username, password } = req.body;
+    pool.query('select * from users where username = $1', [username], (err, results) => {
+        if (err) {
+            res.status(404).send({ 'error': 'unknown' });
         }
-    }
-    if (isFound) {
-        res.send({ 'result': 'found' });
-    }
-    else {
-        res.status(400).send({ 'result': 'not found' });
-    }
+        const user = results.rows;
+        if (user.length) {
+            if (username === user[0].username && password === user[0].password) {
+                const id = user[0].id.toString();
+                res.send({ 'id': id });
+            }
+            else {
+                res.status(404).send({ 'error': 'incorrect info' });
+            }
+        }
+        else {
+            res.status(404).send({ 'error': 'not found' });
+        }
+
+    });
 });
 
 app.post('/register', (req, res) => {
-    let isFound = false;
-    const arr = Object.keys(req.body);
-    if (arr[0] === 'email' && arr[1] === 'username' && arr[2] === 'password' && arr[3] === 'balance') {
+    pool.query('select * from users order by id asc', (err, results) => {
+        let isFound = false;
+        const users = results.rows;
+        const { email, username, password } = req.body;
         for (user of users) {
-            if (user.email === req.body.email || user.username === req.body.username) {
+            if (user.email === email || user.username === username) {
                 isFound = true;
                 break; // don't need to continue the loop after user found
             }
         }
         if (!isFound) {
-            res.send({ 'result': 'success' });
-            users.push(req.body);
+            const balance = 2000;
+            pool.query('insert into users (email, username, password, balance) values ($1, $2, $3, $4)', [email, username, password, balance], (err, results) => {
+                if (err) { return err; }
+                res.send({ 'result': 'new user added' });
+            });
         }
         else {
-            res.status(400).send({ 'result': 'user already exists' });
+            res.send({ 'result': 'user already exists' });
         }
-    }
-    else {
-        res.status(400).send({ 'result': 'error' });
-    }
+    });
 });
 
 app.listen(3000, () => {
