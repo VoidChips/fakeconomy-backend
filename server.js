@@ -2,6 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const pool = require('../database-config/fakeconomy-config');
+const nodemailer = require('nodemailer');
+const email_config = require('../email_config');
 
 const app = express();
 app.use(bodyParser.json());
@@ -31,7 +33,7 @@ const products = [
 ];
 
 app.get('/users', (req, res) => {
-    pool.query('select * from users order by id asc', (err, results) => {
+    pool.query('SELECT * FROM users ORDER BY id ASC', (err, results) => {
         if (err) {
             throw err;
         }
@@ -51,7 +53,7 @@ app.get('/products', (req, res) => {
 // send user's balance
 app.get('/balance/:id', (req, res) => {
     const id = req.params.id;
-    pool.query('select * from users where id = $1', [id], (err, results) => {
+    pool.query('SELECT * FROM users WHERE id = $1', [id], (err, results) => {
         if (err) {
             throw err;
         }
@@ -63,20 +65,20 @@ app.get('/balance/:id', (req, res) => {
 // update user's balance
 app.post('/update_balance', (req, res) => {
     const { id, price } = req.body;
-    pool.query('select * from users where id = $1', [id], (err, results) => {
+    pool.query('SELECT * FROM users WHERE id = $1', [id], (err, results) => {
         if (err) { throw err; }
         const balance = results.rows[0].balance;
         const new_balance = balance - price;
-        pool.query('update users set balance = $1 where id = $2', [new_balance, id], (err, results) => {
+        pool.query('UPDATE users SET balance = $1 WHERE id = $2', [new_balance, id], (err, results) => {
             if (err) { throw err; }
-            res.send({'result': 'balance updated'});
+            res.send({ 'result': 'balance updated' });
         });
     });
 });
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
-    pool.query('select * from users where username = $1', [username], (err, results) => {
+    pool.query('SELECT * FROM users WHERE username = $1', [username], (err, results) => {
         if (err) {
             res.status(404).send({ 'error': 'unknown' });
         }
@@ -98,7 +100,7 @@ app.post('/login', (req, res) => {
 });
 
 app.post('/register', (req, res) => {
-    pool.query('select * from users order by id asc', (err, results) => {
+    pool.query('SELECT * FROM users ORDER BY id ASC', (err, results) => {
         let isFound = false;
         const users = results.rows;
         const { email, username, password } = req.body;
@@ -109,14 +111,63 @@ app.post('/register', (req, res) => {
             }
         }
         if (!isFound) {
-            const balance = 2000;
-            pool.query('insert into users (email, username, password, balance) values ($1, $2, $3, $4)', [email, username, password, balance], (err, results) => {
+            let code = Math.floor(Math.random() * 999999) + 100000;
+            pool.query('INSERT INTO users (email, username, password, verification_code) VALUES ($1, $2, $3, $4)', [email, username, password, code], (err, results) => {
                 if (err) { return err; }
-                res.send({ 'result': 'new user added' });
+
+                // after 5 minutes, the verification code is invalid.
+                setTimeout(() => {
+                    code = null;
+                }, 300000);
+
+                const transporter = nodemailer.createTransport({
+                    service: 'Gmail',
+                    auth: {
+                        user: email_config.address,
+                        pass: email_config.password
+                    }
+                });
+
+                const mailOptions = {
+                    from: `${email_config.name} <${email_config.address}>`,
+                    to: email,
+                    subject: 'Verify your account',
+                    text: `${username}, Your verification code is ${code}`
+                };
+
+                transporter.sendMail(mailOptions, function (error, info) {
+                    if (error) {
+                        console.log(error);
+                    } else {
+                        console.log('Email sent: ' + info.response);
+                    }
+                });
+                pool.query('SELECT id FROM users WHERE username = $1', [username], (err, results) => {
+                    res.send({ 'result': results.rows[0].id });
+                });
             });
         }
         else {
             res.send({ 'result': 'user already exists' });
+        }
+    });
+});
+
+app.put('/verify', (req, res) => {
+    const { id } = req.body;
+    let { code } = req.body;
+    code = Number(code);
+    pool.query('SELECT verification_code FROM users WHERE id = $1', [id], (err, results) => {
+        if (err) { res.status(400).send(err); }
+        // verify user if code is valid
+        if (code === results.rows[0].verification_code) {
+            pool.query('UPDATE users SET verified = TRUE WHERE id = $1', [id], (err, results) => {
+                if (err) { res.status(400).send(err); }
+                res.send({ verified: 'true' });
+            })
+        }
+        else {
+            res.status(404).send({ verified: 'false' });
         }
     });
 });
