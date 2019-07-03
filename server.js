@@ -34,9 +34,7 @@ const products = [
 
 app.get('/users', (req, res) => {
     pool.query('SELECT * FROM users ORDER BY id ASC', (err, results) => {
-        if (err) {
-            throw err;
-        }
+        if (err) { throw err; }
         let usernames = [];
         const users = results.rows;
         for (user of users) {
@@ -46,20 +44,18 @@ app.get('/users', (req, res) => {
     })
 });
 
-app.get('/products', (req, res) => {
-    res.send(products);
+// send account info
+app.get('/account/:id', (req, res) => {
+    const { id } = req.params;
+    pool.query('SELECT email, username, balance FROM users WHERE id = $1', [id], (err, results) => {
+        if (err) { throw err; }
+        const user_info = results.rows[0];
+        res.send(user_info);
+    });
 });
 
-// send user's balance
-app.get('/balance/:id', (req, res) => {
-    const id = req.params.id;
-    pool.query('SELECT * FROM users WHERE id = $1', [id], (err, results) => {
-        if (err) {
-            throw err;
-        }
-        const balance = results.rows[0].balance;
-        res.send({ 'balance': balance });
-    })
+app.get('/products', (req, res) => {
+    res.send(products);
 });
 
 // update user's balance
@@ -113,12 +109,7 @@ app.post('/register', (req, res) => {
         if (!isFound) {
             let code = Math.floor(Math.random() * 999999) + 100000;
             pool.query('INSERT INTO users (email, username, password, verification_code) VALUES ($1, $2, $3, $4)', [email, username, password, code], (err, results) => {
-                if (err) { return err; }
-
-                // after 5 minutes, the verification code is invalid.
-                setTimeout(() => {
-                    code = null;
-                }, 300000);
+                if (err) { throw err; }
 
                 const transporter = nodemailer.createTransport({
                     service: 'Gmail',
@@ -158,7 +149,7 @@ app.put('/verify', (req, res) => {
     let { code } = req.body;
     code = Number(code);
     pool.query('SELECT verification_code FROM users WHERE id = $1', [id], (err, results) => {
-        if (err) { res.status(400).send(err); }
+        if (err) { throw err; }
         // verify user if code is valid
         if (code === results.rows[0].verification_code) {
             pool.query('UPDATE users SET verified = TRUE WHERE id = $1', [id], (err, results) => {
@@ -169,6 +160,14 @@ app.put('/verify', (req, res) => {
         else {
             res.status(404).send({ verified: 'false' });
         }
+    });
+});
+
+app.delete('/delete_user/:id', (req, res) => {
+    const { id } = req.params;
+    pool.query(`DELETE FROM users WHERE id = $1`, [id], (err, results) => {
+        if (err) { throw err; }
+        res.send({ status: 'deleted' });
     });
 });
 
