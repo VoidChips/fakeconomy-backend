@@ -1,4 +1,4 @@
-const verifyUser = (pool) => (req, res) => {
+const verifyUser = (pool, nodemailer, email_config) => (req, res) => {
     const { username } = req.body;
     let { code } = req.body;
     pool.query('SELECT email, verification_code FROM users WHERE username = $1', [username], (err, results) => {
@@ -8,7 +8,7 @@ const verifyUser = (pool) => (req, res) => {
             const new_code = generateVerificationCode();
             pool.query('UPDATE users SET verification_code = $1 WHERE username = $2', [new_code, username], (err, results) => {
                 if (err) { throw err; }
-                sendVerificationMail(email, username, new_code);
+                sendVerificationMail(email, username, new_code, nodemailer, email_config);
                 res.send({ result: 'new code' });
 
             });

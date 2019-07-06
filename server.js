@@ -39,7 +39,7 @@ app.post('/update_balance', update_balance.updateBalance(pool));
 
 app.post('/login', login.login(pool));
 
-app.post('/register', register.register(pool, nodemailer));
+app.post('/register', register.register(pool));
 
 app.put('/verify', verify.verifyUser(pool, nodemailer, email_config));
 
