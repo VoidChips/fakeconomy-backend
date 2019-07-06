@@ -1,4 +1,4 @@
-const updateBalance = (pool) => (err, results) => {
+const updateBalance = (pool) => (req, res) => {
     const { id, price } = req.body;
     pool.query('SELECT * FROM users WHERE id = $1', [id], (err, results) => {
         if (err) { throw err; }
