@@ -2,6 +2,21 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const nodemailer = require('nodemailer');
+const fs = require('fs');
+const multer = require('multer');
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'images/');
+    },
+    filename: (req, file, cb) => {
+        console.log(`File type is: ${file.mimetype}`);
+        if ((file.mimetype).search('image/' !== -1)) {
+            cb(null, file.originalname);
+            console.log(`${file.originalname} added in images directory`);
+        }
+    }
+})
+const upload = multer({ storage: storage });
 // const path = require('path');
 
 const pool = require('../database-config/fakeconomy-config');
@@ -13,6 +28,8 @@ const users = require('./requests/users');
 const account = require('./requests/account');
 const products = require('./requests/products');
 const image = require('./requests/image');
+const add_image = require('./requests/add_image');
+const create_product = require('./requests/create_product');
 const update_balance = require('./requests/update_balance');
 const login = require('./requests/login');
 const register = require('./requests/register');
@@ -33,6 +50,10 @@ app.get('/account/:id', account.getAccountInfo(pool));
 app.get('/products', products.getProducts(pool));
 
 app.get('/image/:name', image.getImage(pool, root));
+
+app.post('/add_image', upload.single('image'), add_image.addImage(fs, root));
+
+app.post('/create_product', create_product.createProduct(pool));
 
 // update user's balance
 app.post('/update_balance', update_balance.updateBalance(pool));
