@@ -3,7 +3,7 @@ const getProducts = (pool) => (req, res) => {
     // send all products if seller is 0 and type is set to all
     if (Number(sellerID) === 0) {
         if (type === 'all') {
-            pool.query('SELECT * FROM products', (err, results) => {
+            pool.query('SELECT * FROM products ORDER BY name ASC', (err, results) => {
                 if (err) { throw err; }
                 const products = results.rows;
                 res.send(products);
@@ -19,7 +19,7 @@ const getProducts = (pool) => (req, res) => {
                 }
                 const username = results.rows[0].username;
                 // get products with that seller name
-                pool.query('SELECT * FROM products WHERE seller = $1', [username], (err, results) => {
+                pool.query('SELECT * FROM products WHERE seller = $1 ORDER BY name ASC', [username], (err, results) => {
                     if (err) throw err;
                     const products = results.rows;
                     res.send(products);

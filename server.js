@@ -30,11 +30,13 @@ const products = require('./requests/products');
 const image = require('./requests/image');
 const add_image = require('./requests/add_image');
 const create_product = require('./requests/create_product');
-const update_balance = require('./requests/update_balance');
+const buy = require('./requests/buy');
+const sell = require('./requests/sell');
 const login = require('./requests/login');
 const register = require('./requests/register');
 const verify = require('./requests/verify');
 const delete_user = require('./requests/delete_user');
+const delete_product = require('./requests/delete_product');
 
 const app = express();
 app.use(bodyParser.json());
@@ -55,8 +57,13 @@ app.post('/add_image', upload.single('image'), add_image.addImage(fs, root));
 
 app.post('/create_product', create_product.createProduct(pool));
 
-// update user's balance
-app.post('/update_balance', update_balance.updateBalance(pool));
+app.delete('/delete_product', delete_product.deleteProduct(pool, fs, root));
+
+// update buyer's balance
+app.post('/buy', buy.buy(pool));
+
+// update product inventory and seller's balance
+app.put('/sell', sell.sell(pool));
 
 app.post('/login', login.login(pool));
 

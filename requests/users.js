@@ -11,5 +11,5 @@ const getUsers = (pool) => (req, res) => {
 }
 
 module.exports = {
-    getUsers: getUsers
+    getUsers
 };
