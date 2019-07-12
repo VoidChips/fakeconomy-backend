@@ -47,7 +47,7 @@ app.get('/users', users.getUsers(pool)
 // send account info
 app.get('/account/:id', account.getAccountInfo(pool));
 
-app.get('/products', products.getProducts(pool));
+app.get('/products/:sellerID/:type', products.getProducts(pool));
 
 app.get('/image/:name', image.getImage(pool, root));
 
