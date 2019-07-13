@@ -72,7 +72,7 @@ app.post('/api/register', register.register(pool, bcrypt));
 
 app.put('/api/verify', verify.verifyUser(pool, nodemailer, email_config));
 
-app.delete('/api/delete_user/:id', delete_user.deleteUser(pool));
+app.delete('/api/delete_user/:username', delete_user.deleteUser(pool, fs, root));
 
 app.listen(3000, () => {
     console.log(`app is running on port 3000`);
