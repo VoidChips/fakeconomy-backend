@@ -1,10 +1,11 @@
-const deleteUser = (req, res, id, pool) => {
-    pool.query(`DELETE FROM users WHERE id = $1`, [id], (err, results) => {
+const deleteUser = pool => (req, res) => {
+    let { id } = req.params;
+    pool.query(`DELETE FROM users WHERE id = $1`, [Number(id)], (err, results) => {
         if (err) { throw err; }
         res.send({ status: 'deleted' });
     });
 }
 
 module.exports = {
-    deleteUser: deleteUser
+    deleteUser
 };

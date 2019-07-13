@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const nodemailer = require('nodemailer');
+const bcrypt = require('bcrypt');
 const fs = require('fs');
 const multer = require('multer');
 const storage = multer.diskStorage({
@@ -43,38 +44,35 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // get verified users
-app.get('/users', users.getUsers(pool)
+app.get('/api/users', users.getUsers(pool)
 );
 
 // send account info
-app.get('/account/:id', account.getAccountInfo(pool));
+app.get('/api/account/:id', account.getAccountInfo(pool));
 
-app.get('/products/:sellerID/:type', products.getProducts(pool));
+app.get('/api/products/:sellerID/:type', products.getProducts(pool));
 
-app.get('/image/:name', image.getImage(pool, root));
+app.get('/api/image/:name', image.getImage(pool, root));
 
-app.post('/add_image', upload.single('image'), add_image.addImage(fs, root));
+app.post('/api/add_image', upload.single('image'), add_image.addImage(fs, root));
 
-app.post('/create_product', create_product.createProduct(pool));
+app.post('/api/create_product', create_product.createProduct(pool));
 
-app.delete('/delete_product', delete_product.deleteProduct(pool, fs, root));
+app.delete('/api/delete_product', delete_product.deleteProduct(pool, fs, root));
 
 // update buyer's balance
-app.post('/buy', buy.buy(pool));
+app.post('/api/buy', buy.buy(pool));
 
 // update product inventory and seller's balance
-app.put('/sell', sell.sell(pool));
+app.put('/api/sell', sell.sell(pool));
 
-app.post('/login', login.login(pool));
+app.post('/api/login', login.login(pool, bcrypt));
 
-app.post('/register', register.register(pool));
+app.post('/api/register', register.register(pool, bcrypt));
 
-app.put('/verify', verify.verifyUser(pool, nodemailer, email_config));
+app.put('/api/verify', verify.verifyUser(pool, nodemailer, email_config));
 
-app.delete('/delete_user/:id', (req, res) => {
-    const { id } = req.params;
-    delete_user.deleteUser(req, res, id, pool);
-});
+app.delete('/api/delete_user/:id', delete_user.deleteUser(pool));
 
 app.listen(3000, () => {
     console.log(`app is running on port 3000`);
