@@ -1,6 +1,6 @@
 const login = (pool, bcrypt) => (req, res) => {
     const { username, password } = req.body;
-    pool.query('SELECT a.id, a.verified, b.hash FROM users a INNER JOIN login b ON a.username = b.username WHERE a.username = $1', [username], (err, results) => {
+    pool.query('SELECT a.id, a.verified, b.hash FROM users a INNER JOIN login b ON a.id = b.id WHERE a.username = $1', [username], (err, results) => {
         if (err) {
             res.status(404).send({ 'error': 'unknown' });
         }
@@ -29,12 +29,6 @@ const login = (pool, bcrypt) => (req, res) => {
         }
     });
 }
-
-// const checkPassword = (bcrypt, password, hash) => {
-//     bcrypt.compare(password, hash, function (err, res) {
-//         return res;
-//     });
-// }
 
 module.exports = {
     login
