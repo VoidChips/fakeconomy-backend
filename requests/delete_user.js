@@ -1,4 +1,4 @@
-const deleteUser = (pool, fs, root) => (req, res) => {
+const deleteUser = (pool, fs, ABSOLUTE_PATH) => (req, res) => {
     let { username } = req.params;
     pool.query('SELECT image FROM products WHERE seller = $1', [username], (err, results) => {
         if (err) throw err;
@@ -6,7 +6,7 @@ const deleteUser = (pool, fs, root) => (req, res) => {
         // delete all images of products of the user
         for (image of images) {
             console.log(`Deleting ${image.image}...`);
-            fs.unlink(`${root}/images/${image.image}`, err => {
+            fs.unlink(`${ABSOLUTE_PATH}/images/${image.image}`, err => {
                 if (err) throw err;
             });
         }

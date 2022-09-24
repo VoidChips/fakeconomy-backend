@@ -1,3 +1,5 @@
+require('dotenv').config();
+const env = process.env;
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -18,13 +20,6 @@ const storage = multer.diskStorage({
     }
 })
 const upload = multer({ storage: storage });
-// const path = require('path');
-
-const pool = require('../database-config/fakeconomy-config');
-const email_config = require('../email_config');
-const root = require('./root');
-// root is the absolute path of the project directory
-
 const users = require('./requests/users');
 const account = require('./requests/account');
 const products = require('./requests/products');
@@ -39,6 +34,21 @@ const register = require('./requests/register');
 const verify = require('./requests/verify');
 const delete_user = require('./requests/delete_user');
 const delete_product = require('./requests/delete_product');
+const Pool = require('pg').Pool;
+const pool = new Pool({
+    user: env.PG_USER,
+    host: env.PG_HOST,
+    database: env.PG_DATABASE,
+    password: env.PG_PASSWORD,
+    port: env.PG_PORT
+});
+const email_config = {
+    name: env.EMAIL_NAME,
+    address: env.EMAIL_ADDRESS,
+    password: env.EMAIL_PASSWORD
+}
+const ABSOLUTE_PATH = env.ABSOLUTE_ABSOLUTE_PATH;
+// ABSOLUTE_PATH is the absolute ABSOLUTE_PATH of the project directory
 
 const app = express();
 app.use(bodyParser.json());
@@ -53,13 +63,13 @@ app.get('/api/account/:id', account.getAccountInfo(pool));
 
 app.get('/api/products/:sellerID/:type', products.getProducts(pool));
 
-app.get('/api/image/:name', image.getImage(pool, root));
+app.get('/api/image/:name', image.getImage(pool, ABSOLUTE_PATH));
 
-app.post('/api/add_image', upload.single('image'), add_image.addImage(fs, root));
+app.post('/api/add_image', upload.single('image'), add_image.addImage(fs, ABSOLUTE_PATH));
 
 app.post('/api/create_product', create_product.createProduct(pool));
 
-app.delete('/api/delete_product', delete_product.deleteProduct(pool, fs, root));
+app.delete('/api/delete_product', delete_product.deleteProduct(pool, fs, ABSOLUTE_PATH));
 
 // update buyer's balance
 app.post('/api/buy', buy.buy(pool));
@@ -76,7 +86,7 @@ app.post('/api/register', register.register(pool, bcrypt));
 
 app.put('/api/verify', verify.verifyUser(pool, nodemailer, email_config));
 
-app.delete('/api/delete_user/:username', delete_user.deleteUser(pool, fs, root));
+app.delete('/api/delete_user/:username', delete_user.deleteUser(pool, fs, ABSOLUTE_PATH));
 
 app.listen(3000, () => {
     console.log(`app is running on port 3000`);

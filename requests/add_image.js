@@ -1,4 +1,4 @@
-const addImage = (fs, root) => (req, res) => {
+const addImage = (fs, ABSOLUTE_PATH) => (req, res) => {
     if (!req.file) {
         res.send({ upload: 'file not found' });
     }
