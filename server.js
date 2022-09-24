@@ -39,7 +39,6 @@ const pool = new Pool({
     user: env.PG_USER,
     host: env.PG_HOST,
     database: env.PG_DATABASE,
-    password: env.PG_PASSWORD,
     port: env.PG_PORT
 });
 const email_config = {
@@ -49,6 +48,7 @@ const email_config = {
 }
 const ABSOLUTE_PATH = env.ABSOLUTE_ABSOLUTE_PATH;
 // ABSOLUTE_PATH is the absolute ABSOLUTE_PATH of the project directory
+pool.password = env.PG_PASSWORD;
 
 const app = express();
 app.use(bodyParser.json());
