@@ -1,4 +1,4 @@
-const verifyUser = (pool, nodemailer, email_config) => (req, res) => {
+const verifyUser = (pool, controllers) => (req, res) => {
     const { username } = req.body;
     let { code } = req.body;
     pool.query('SELECT email, verification_code FROM users WHERE username = $1', [username], (err, results) => {
@@ -8,7 +8,7 @@ const verifyUser = (pool, nodemailer, email_config) => (req, res) => {
             const new_code = generateVerificationCode();
             pool.query('UPDATE users SET verification_code = $1 WHERE username = $2', [new_code, username], (err, results) => {
                 if (err) throw err;
-                sendVerificationMail(email, username, new_code, nodemailer, email_config);
+                controllers.sendMail(email, new_code);
                 res.send({ result: 'new code' });
             });
         }
@@ -31,31 +31,6 @@ const verifyUser = (pool, nodemailer, email_config) => (req, res) => {
 
 const generateVerificationCode = () => {
     return Math.floor(Math.random() * 999999) + 100000;
-}
-
-const sendVerificationMail = (email, username, code, nodemailer, email_config) => {
-    const transporter = nodemailer.createTransport({
-        service: 'Gmail',
-        auth: {
-            user: email_config.address,
-            pass: email_config.password
-        }
-    });
-
-    const mailOptions = {
-        from: `${email_config.name} <${email_config.address}>`,
-        to: email,
-        subject: 'Verify your account',
-        text: `${username}, Your verification code is ${code}`
-    };
-
-    transporter.sendMail(mailOptions, function (error, info) {
-        if (error) {
-            console.log(error);
-        } else {
-            console.log('Email sent: ' + info.response);
-        }
-    });
 }
 
 module.exports = {

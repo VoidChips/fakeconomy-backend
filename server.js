@@ -3,8 +3,8 @@ const env = process.env;
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const nodemailer = require('nodemailer');
 const bcrypt = require('bcrypt');
+const controllers = require('./controllers');
 const fs = require('fs');
 const multer = require('multer');
 const storage = multer.diskStorage({
@@ -37,18 +37,14 @@ const delete_product = require('./requests/delete_product');
 const Pool = require('pg').Pool;
 const pool = new Pool({
     user: env.PG_USER,
+    password:env.PG_PASSWORD,
     host: env.PG_HOST,
     database: env.PG_DATABASE,
     port: env.PG_PORT
 });
-const email_config = {
-    name: env.EMAIL_NAME,
-    address: env.EMAIL_ADDRESS,
-    password: env.EMAIL_PASSWORD
-}
-const ABSOLUTE_PATH = env.ABSOLUTE_ABSOLUTE_PATH;
+
 // ABSOLUTE_PATH is the absolute ABSOLUTE_PATH of the project directory
-pool.password = env.PG_PASSWORD;
+const ABSOLUTE_PATH = env.ABSOLUTE_ABSOLUTE_PATH;
 
 const app = express();
 app.use(bodyParser.json());
@@ -84,7 +80,7 @@ app.post('/api/login', login.login(pool, bcrypt));
 
 app.post('/api/register', register.register(pool, bcrypt));
 
-app.put('/api/verify', verify.verifyUser(pool, nodemailer, email_config));
+app.put('/api/verify', verify.verifyUser(pool, controllers));
 
 app.delete('/api/delete_user/:username', delete_user.deleteUser(pool, fs, ABSOLUTE_PATH));
 
